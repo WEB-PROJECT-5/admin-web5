@@ -1,8 +1,44 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react';
 import "../../assets/css/sb-admin-2.min.css"
 import QuanliUserApi from "../../api/QuanliUser"
+import axios from 'axios';
 
 export default function QuanlyUser() {
+  const [listUser, setListUser] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState(''); // Thêm state để lưu từ khóa tìm kiếm
+  const itemsPerPage = 5;
+
+  // In ra bảng các users
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await QuanliUserApi.getAllUser();
+        const data = res.data.data;
+        setListUser(Array.isArray(data) ? data : []); // Ensure `data` is an array
+        console.log("data", data);
+      } catch (error) {
+        console.error(error);
+        setListUser([]); // Fallback to empty array if there's an error
+      }
+    })();
+  }, []);
+
+  // Quản lý phân trang
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentUsers = listUser.slice(indexOfFirstItem, indexOfLastItem);
+
+  const totalPages = Math.ceil(listUser.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value); // Cập nhật từ khóa tìm kiếm khi người dùng thay đổi
+  };
+
   return (
     <div id="content-wrapper" className="d-flex flex-column">
       <div id="content">
@@ -84,15 +120,15 @@ export default function QuanlyUser() {
 
         <div className="container-fluid">
           <div className="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 className="h3 mb-2 text-gray-800">Tables</h1>
+            <h1 className="h3 mb-2 text-gray-800">Bảng</h1>
             <button type="button" className="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#exampleModal">
-              Thêm game mới
+              Thêm user mới
             </button>
             <div className="modal fade" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
               <div className="modal-dialog">
                 <div className="modal-content">
                   <div className="modal-header">
-                    <h1 className="modal-title fs-5" id="exampleModalLabel">Thêm game mới</h1>
+                    <h1 className="modal-title fs-5" id="exampleModalLabel">Thêm user mới</h1>
                     <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                   </div>
                   <div className="modal-body">
@@ -120,44 +156,63 @@ export default function QuanlyUser() {
 
           <div className="card shadow mb-4">
             <div className="card-header py-3">
-              <h6 className="m-0 font-weight-bold text-primary">Quản lí Game</h6>
+              <h6 className="m-0 font-weight-bold text-primary">Quản lí người chơi</h6>
             </div>
             <div className="card-body">
               <div className="table-responsive">
                 <table className="table table-bordered" width="100%" cellSpacing="0">
                   <thead>
                     <tr>
-                      <th>ID game</th>
-                      <th>Tên game</th>
-                      <th>Mô tả game</th>
-                      <th>gener</th>
-                      <th>Hình ảnh</th>
-                      <th>Ngày phát hành</th>
+                      <th>Mã người chơi</th>
+                      <th>Tên người chơi</th>
+                      <th>email</th>
+                      <th>password</th>
+                      <th>Tên </th>
+                      <th>Số điện thoại </th>
+                      <th>Hình đại diện</th>
+                      <th>Ngày sinh</th>
                       <th>Hành động</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td>34535353</td>
-                      <td>Shad Decker</td>
-                      <td>Regional Director</td>
-                      <td>Edinburgh</td>
-                      <td>51</td>
-                      <td>2008/11/13</td>
-                      <td>
-                        <a href="#" className="btn btn-info btn-circle"><i className="fa-solid fa-pen-to-square"></i></a>
-                        <a href="#" className="btn btn-danger btn-circle"><i className="fas fa-trash"></i></a>
-                      </td>
-                    </tr>
+                    {currentUsers.map((user) => (
+                      <tr key={user.user_id}>
+                        <td>{user.user_id}</td>
+                        <td>{user.user_name}</td>
+                        <td>{user.email}</td>
+                        <td>{user.password}</td>
+                        <td>{user.fullname}</td>
+                        <td>{user.phone}</td>
+                        <td><img src={user.thumbnail} alt={user.user_name} width="50" /></td>
+                        <td>{user.dob}</td>
+                        <td>
+                          <a href="#" className="btn btn-info btn-circle"><i className="fa-solid fa-pen-to-square"></i></a>
+                          <a href="#" className="btn btn-danger btn-circle"><i className="fas fa-trash"></i></a>
+                        </td>
+                      </tr>
+                    ))}
                     {/* Additional table rows here */}
                   </tbody>
                 </table>
+              </div>
+              {/* Pagination Controls */}
+              <div className="pagination">
+                {Array.from({ length: totalPages }, (_, index) => (
+                  <button
+                    key={index + 1}
+                    onClick={() => handlePageChange(index + 1)}
+                    className={`btn btn-primary ${currentPage === index + 1 ? 'active' : ''}`}
+                    style={{ margin: '0 5px' }}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         </div>
 
-       
+
       </div>
     </div>
   );

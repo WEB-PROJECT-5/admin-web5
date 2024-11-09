@@ -437,7 +437,7 @@ export default function HomePage() {
                                 href="https://www.facebook.com/profile.php?id=100083059010220"
                                 target="_blank"
                             >
-                                Thiên Hương
+                                Web5 Project
                             </a>{" "}
                             2024
                         </span>

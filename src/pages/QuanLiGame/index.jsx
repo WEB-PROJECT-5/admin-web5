@@ -1,13 +1,71 @@
 import React, { useEffect, useState } from 'react';
 import "../../assets/css/sb-admin-2.min.css";
 import QuanlyGameApi from '../../api/QuanliGame';
+import axios from 'axios';
 
 export default function QuanlyGame() {
   const [listGame, setListGame] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState(''); // Thêm state để lưu từ khóa tìm kiếm
-  const itemsPerPage = 5; 
+  const itemsPerPage = 5;
+  // Tạo thêm game mới
+  const [gameName, setGameName] = useState("");
+  const [description, setDescription] = useState("");
+  const [genre, setGenre] = useState("");
+  const [image, setImage] = useState(null);
+  const [releaseDate, setReleaseDate] = useState("");
+  const [tag, setTag] = useState("");
+  const [games, setGames] = useState([]);
+  const [gameTotalPages, setGameTotalPages] = useState(1);
 
+  // Tạo game mới khi nhấn nút Save
+  const createGame = async () => {
+    const gameData = {
+      game_name: gameName,
+      description: description,
+      genre: genre,
+      image: image,  // Assuming 'image' is the URL or file path
+      release_date: releaseDate,
+      tag: tag
+    };
+
+    try {
+      const response = await QuanlyGameApi.createGame(gameData); // Gửi dữ liệu vào backend
+      console.log('Game created successfully:', response.data);
+      setListGame((prevGames) => [...prevGames, response.data.data]); // Cập nhật lại danh sách game
+    } catch (error) {
+      console.error("Error creating game:", error);
+    }
+  };
+
+  // Đóng modal và reset trạng thái
+  const handleCloseModal = () => {
+    setGameName("");
+    setDescription("");
+    setGenre("");
+    setImage("");
+    setReleaseDate("");
+    setTag("");
+    // Reset other state values as necessary
+  };
+
+  const onPageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    // Fetch the games for the selected page
+    // You need to update this part to handle pagination in your data fetching logic
+  };
+
+  // Xóa game được chọn
+  const handleDeleteGame = async (gameId) => {
+    try {
+      await QuanlyGameApi.deleteGame(gameId);
+      setListGame((prevGames) => prevGames.filter(game => game.game_id !== gameId)); // Update the list after deletion
+    } catch (error) {
+      console.error("Error deleting game:", error);
+    }
+  };
+
+  // Tìm kiếm theo tag
   useEffect(() => {
     const fetchGames = async () => {
       try {
@@ -29,35 +87,35 @@ export default function QuanlyGame() {
     fetchGames();
   }, [searchTerm]); // Hook phụ thuộc vào searchTerm để fetch dữ liệu khi có thay đổi
 
-
-useEffect(() => {
+// In ra bảng các games
+  useEffect(() => {
     (async () => {
-        try {
-            const res = await QuanlyGameApi.getAllGames();
-            const data = res.data.data;
-            setListGame(Array.isArray(data) ? data : []); // Ensure `data` is an array
-            console.log("data", data);
-        } catch (error) {
-            console.error(error);
-            setListGame([]); // Fallback to empty array if there's an error
-        }
+      try {
+        const res = await QuanlyGameApi.getAllGames();
+        const data = res.data.data;
+        setListGame(Array.isArray(data) ? data : []); // Ensure `data` is an array
+        console.log("data", data);
+      } catch (error) {
+        console.error(error);
+        setListGame([]); // Fallback to empty array if there's an error
+      }
     })();
-}, []);
+  }, []);
 
- // Quản lý phân trang
- const indexOfLastItem = currentPage * itemsPerPage;
- const indexOfFirstItem = indexOfLastItem - itemsPerPage;
- const currentGames = listGame.slice(indexOfFirstItem, indexOfLastItem);
+  // Quản lý phân trang
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentGames = listGame.slice(indexOfFirstItem, indexOfLastItem);
 
- const totalPages = Math.ceil(listGame.length / itemsPerPage);
+  const totalPages = Math.ceil(listGame.length / itemsPerPage);
 
- const handlePageChange = (pageNumber) => {
-   setCurrentPage(pageNumber);
- };
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
 
- const handleSearchChange = (event) => {
-  setSearchTerm(event.target.value); // Cập nhật từ khóa tìm kiếm khi người dùng thay đổi
-};
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value); // Cập nhật từ khóa tìm kiếm khi người dùng thay đổi
+  };
 
   return (
     <div id="content-wrapper" className="d-flex flex-column">
@@ -149,7 +207,12 @@ useEffect(() => {
         <div className="container-fluid">
           <div className="d-sm-flex align-items-center justify-content-between mb-4">
             <h1 className="h3 mb-2 text-gray-800">Bảng</h1>
-            <button type="button" className="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#exampleModal">
+            <button
+              type="button"
+              className="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#exampleModal"
+            >
               Thêm game mới
             </button>
             <div className="modal fade" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -162,20 +225,66 @@ useEffect(() => {
                   <div className="modal-body">
                     <form className="user">
                       <div className="form-group">
-                        <input type="text" className="form-control" placeholder="Nhập tên game" />
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Nhập tên game"
+                          value={gameName}
+                          onChange={(e) => setGameName(e.target.value)}
+                        />
                       </div>
                       <div className="form-group">
-                        <input type="text" className="form-control" placeholder="Nhập mô tả game" />
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Nhập mô tả game"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Nhập thể loại game"
+                          value={genre}
+                          onChange={(e) => setGenre(e.target.value)}
+                        />
                       </div>
                       <div className="custom-file">
-                        <input type="file" className="custom-file-input" id="customFile" />
-                        <label className="custom-file-label" htmlFor="customFile">Chọn hình ảnh</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="URL image"
+                          value={image}
+                          onChange={(e) => setImage(e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <input
+                          type="date"
+                          className="form-control"
+                          placeholder="Ngày phát hành"
+                          value={releaseDate}
+                          onChange={(e) => setReleaseDate(e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Nhập tag"
+                          value={tag}
+                          onChange={(e) => setTag(e.target.value)}
+                        />
                       </div>
                     </form>
                   </div>
                   <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" className="btn btn-primary">Save</button>
+                    {/* // Gọi handleCloseModal khi đóng modal  */}
+                    <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" onClick={handleCloseModal}>
+                      Close</button>
+                    <button type="button" className="btn btn-primary" onClick={createGame}>Save</button>
                   </div>
                 </div>
               </div>
@@ -212,10 +321,12 @@ useEffect(() => {
                         <td>{game.tag}</td>
                         <td>{game.release_date}</td>
                         <td>
+                          {/* button để chỉnh sửa */}
                           <button className="btn btn-info btn-circle">
                             <i className="fa-solid fa-pen-to-square"></i>
                           </button>
-                          <button className="btn btn-danger btn-circle">
+                          {/* button để xóa */}
+                          <button className="btn btn-danger btn-circle" onClick={() => handleDeleteGame(game.game_id)}>
                             <i className="fas fa-trash"></i>
                           </button>
                         </td>

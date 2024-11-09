@@ -45,12 +45,6 @@ export default function SideBar() {
                     <span >Quản lí người dùng</span>
                 </a>
             </li>
-            <li className="nav-item">
-                <a className="nav-link collapsed" href="quanlicontent.html">
-                    <i className="fa-regular fa-user" />
-                    <span>Quản lí nội dung</span>
-                </a>
-            </li>
             {/* Divider */}
             <hr className="sidebar-divider" />
             {/* Heading */}
